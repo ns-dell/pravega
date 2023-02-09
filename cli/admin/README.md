@@ -101,8 +101,8 @@ All available commands:
         container continuous-recover <number-of-runs> <seconds-between-runs>: Executes a local, non-invasive recovery for all SegmentContainers in the cluster during the specified duration.
         container flush-to-storage <container-id> <segmentstore-endpoint>: Persist the given Segment Container into Storage.
         container recover <container-id>: Executes a local, non-invasive recovery for a SegmentContainer.
+        controller delete-readergroup <scope-name> <readergroup>: Delete a readergroup in a given Scope.
         controller describe-readergroup <scope-name> <readergroup-id>: Get the details of a given ReaderGroup in a Scope.
-        controller delete-readergroup <scope-name> <readergroup>: Delete ReaderGroup in a given Scope.
         controller describe-scope <scope-name>: Get the details of a given Scope.
         controller describe-stream <scope-name> <stream-name>: Get the details of a given Stream.
         controller list-readergroups <scope-name>: Lists all the existing ReaderGroups in a given Scope.
@@ -110,15 +110,17 @@ All available commands:
         controller list-streams <scope-name>: Lists all the existing Streams in a given Scope.
         controller-metadata get <qualified-table-segment-name> <key> <segmentstore-endpoint> [json-file]: Get the value for the specified key from the specified controller metadata table.
         controller-metadata get-reader <host-id> <reader-group-name> <reader-id>: Get the reader metadata of reader belonging to internal reader group for a particular controller host
-        controller-metadata request-detail <host-id> <request-uuid>: Get the pending event detail for a request in a particular controller host. 
         controller-metadata list-entries <qualified-table-segment-name> <entry-count> <segmentstore-endpoint>: List at most the required number of entries from the controller metadata table. Unsupported for stream metadata tables.
         controller-metadata list-keys <qualified-table-segment-name> <key-count> <segmentstore-endpoint>: List at most the required number of keys from the controller metadata table.
+        controller-metadata request-detail <host-id> <request-id>: Get the pending event detail for a request in a particular controller host.
         controller-metadata tables-info : List all the controller metadata tables.
         controller-metadata update <qualified-table-segment-name> <key> <segmentstore-endpoint> <new-value-file>: Update the given key in the table with the provided value.
-        data-recovery durableLog-inspect <container-id> <filename>: Inspects the state of the DurableLog from the storage depending on the given criteria and save it in given filename.
+        data-recovery durableLog-inspect <container-id> <filename>: Allows to inspect DurableLog damaged/corrupted Operations.
         data-recovery durableLog-recovery : Recovers the state of the DurableLog from the storage.
         data-recovery durableLog-repair <container-id>: Allows to repair DurableLog damaged/corrupted Operations.
         data-recovery list-segments : Lists segments from storage with their name, length and sealed status.
+        data-recovery recover-from-storage : Recover the state of a container from what is present on tier-2.
+        data-recovery tableSegment-recovery <segment-chunks-location> <new-table-segment-name> <pravega-local-storage-dir>: Allows to repair a Table Segment being damaged/corrupted.
         password create-password-file <filename> <user:passwword:acl>: Generates file with encrypted password using filename and user:password:acl given as argument.
         readerGroup parse-rg-stream <scope> <reader-group-name> <segmentstore-endpoint> <file-name>: Parse ReaderGroup Stream into a file
         segmentstore get-segment-attribute <qualified-segment-name> <attribute-id> <segmentstore-endpoint>: Gets an attribute for a Segment.
@@ -126,7 +128,7 @@ All available commands:
         segmentstore read-segment <qualified-segment-name> <offset> <length> <segmentstore-endpoint> <file-name>: Read a range from a given Segment into given file.
         segmentstore update-segment-attribute <qualified-segment-name> <attribute-id> <attribute-new-value> <attribute-old-value> <segmentstore-endpoint>: Updates an attribute for a Segment.
         storage list-chunks <qualified-segment-name> <segmentstore-endpoint>: Get the list of storage chunks for the given segment.
-        storage update-latest-journal-snapshot <segment-chunks-path> <journal-file-path> <latest-snapshot-path> <output-directory>: Updates the segment metadata in Journal Snapshot with the segment details in the provided path
+        storage update-latest-journal-snapshot <segment-chunk-path> <journal-path> <latest-snapshot> <output-directory>: Updates the latest journal snapshot with the details provided
         table-segment get <qualified-table-segment-name> <key> <segmentstore-endpoint>: Get the entry for the given key in the table.Use the command "table-segment set-serializer <serializer-name>" to use the appropriate serializer before using this command.
         table-segment get-info <qualified-table-segment-name> <segmentstore-endpoint>: Get the details of a given table.
         table-segment list-keys <qualified-table-segment-name> <key-count> <segmentstore-endpoint>: List at most the required number of keys from the table segment.
