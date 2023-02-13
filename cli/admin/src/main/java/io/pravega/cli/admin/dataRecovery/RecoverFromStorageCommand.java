@@ -323,11 +323,11 @@ public class RecoverFromStorageCommand extends DataRecoveryCommand {
 //                    }
 //                }
 
-                MetadataStore.SegmentInfo sereializedContainerSegment = MetadataStore.SegmentInfo.builder()
+                MetadataStore.SegmentInfo serializedContainerSegment = MetadataStore.SegmentInfo.builder()
                         .segmentId(segmentInfo.getSegmentId())
                         .properties(segmentProperties)
                         .build();
-                TableEntry unversionedEntry = TableEntry.unversioned(segmentEntry.get(0).getKey().getKey(), SERIALIZER.serialize(sereializedContainerSegment));
+                TableEntry unversionedEntry = TableEntry.unversioned(segmentEntry.get(0).getKey().getKey(), SERIALIZER.serialize(serializedContainerSegment));
 //                output("Storing segment %s in container metadata post syncing with storage segment",segmentInfo.getProperties().getName());
                 extension.put(NameUtils.getMetadataSegmentName(container.getId()), Collections.singletonList(unversionedEntry), TIMEOUT).join();
             }
@@ -474,9 +474,9 @@ public class RecoverFromStorageCommand extends DataRecoveryCommand {
                 StorageMetadata storageMetadata = SLTS_SERIALIZER.deserialize(entry.getValue().getCopy()).getValue();
 
                 if (storageMetadata instanceof ChunkMetadata) {
-                    ChunkMetadata chunkMetdata = (ChunkMetadata) storageMetadata;
-                    if (chunkMetdata.getNextChunk() != null && !chunkMetdata.getNextChunk().equalsIgnoreCase("null")) {
-                        return validateSegment(chunkMetdata.getNextChunk());
+                    ChunkMetadata chunkMetadata = (ChunkMetadata) storageMetadata;
+                    if (chunkMetadata.getNextChunk() != null && !chunkMetadata.getNextChunk().equalsIgnoreCase("null")) {
+                        return validateSegment(chunkMetadata.getNextChunk());
                     } else {
                         return true;
                     }
