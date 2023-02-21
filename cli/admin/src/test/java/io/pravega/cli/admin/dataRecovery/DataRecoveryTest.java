@@ -157,6 +157,73 @@ public class DataRecoveryTest extends ThreadPooledTestSuite {
     }
 
     /**
+     * Tests LTS recovery command.
+     * @throws Exception    In case of any exception thrown while execution.
+     */
+    @Test
+    public void testLTSRecoveryCommand() throws Exception {
+        int instanceId = 0;
+        int bookieCount = 3;
+        int containerCount = 1;
+        @Cleanup
+        LocalServiceStarter.PravegaRunner pravegaRunner = new LocalServiceStarter.PravegaRunner(bookieCount, containerCount);
+        pravegaRunner.startBookKeeperRunner(instanceId++);
+        pravegaRunner.startControllerAndSegmentStore(this.storageFactory, null);
+        String streamName = "testLTSRecoveryCommand";
+
+        TestUtils.createScopeStream(pravegaRunner.getControllerRunner().getController(), SCOPE, streamName, config);
+        try (val clientRunner = new TestUtils.ClientRunner(pravegaRunner.getControllerRunner(), SCOPE)) {
+            // Write events to the streams.
+            TestUtils.writeEvents(streamName, clientRunner.getClientFactory());
+        }
+        pravegaRunner.shutDownControllerRunner(); // Shut down the controller
+
+        // Flush all Tier 1 to LTS
+        ServiceBuilder.ComponentSetup componentSetup = new ServiceBuilder.ComponentSetup(pravegaRunner.getSegmentStoreRunner().getServiceBuilder());
+        for (int containerId = 0; containerId < containerCount; containerId++) {
+            componentSetup.getContainerRegistry().getContainer(containerId).flushToStorage(TIMEOUT).join();
+        }
+
+        pravegaRunner.shutDownSegmentStoreRunner(); // Shutdown SegmentStore
+        pravegaRunner.shutDownBookKeeperRunner(); // Shutdown BookKeeper & ZooKeeper
+
+        // start a new BookKeeper and ZooKeeper.
+        pravegaRunner.startBookKeeperRunner(instanceId++);
+
+        // set pravega properties for the test
+        STATE.set(new AdminCommandState());
+        Properties pravegaProperties = new Properties();
+        pravegaProperties.setProperty("pravegaservice.container.count", "1");
+        pravegaProperties.setProperty("pravegaservice.storage.impl.name", "FILESYSTEM");
+        pravegaProperties.setProperty("filesystem.root", this.baseDir.getAbsolutePath());
+        pravegaProperties.setProperty("pravegaservice.zk.connect.uri", "localhost:" + pravegaRunner.getBookKeeperRunner().getBkPort());
+        pravegaProperties.setProperty("bookkeeper.zk.connect.uri", "localhost:" + pravegaRunner.getBookKeeperRunner().getBkPort());
+        pravegaProperties.setProperty("bookkeeper.ledger.path", pravegaRunner.getBookKeeperRunner().getLedgerPath());
+        pravegaProperties.setProperty("bookkeeper.zk.metadata.path", pravegaRunner.getBookKeeperRunner().getLogMetaNamespace());
+        pravegaProperties.setProperty("pravegaservice.clusterName", pravegaRunner.getBookKeeperRunner().getBaseNamespace());
+        STATE.get().getConfigBuilder().include(pravegaProperties);
+
+        // Copy Metadata and Storage Metadata chunks to separate directory
+
+
+        // Command under test
+        TestUtils.executeCommand("data-recovery recover-from-storage " + this.baseDir.getAbsolutePath() + "/_system/containers" + " all", STATE.get());
+
+        // Start a new segment store and controller
+        this.factory = new BookKeeperLogFactory(pravegaRunner.getBookKeeperRunner().getBkConfig().get(), pravegaRunner.getBookKeeperRunner().getZkClient().get(),
+                executorService());
+        pravegaRunner.startControllerAndSegmentStore(this.storageFactory, this.factory);
+        log.info("Started a controller and segment store.");
+        // Create the client with new controller.
+        try (val clientRunner = new TestUtils.ClientRunner(pravegaRunner.getControllerRunner(), SCOPE)) {
+            // Try reading all events to verify that the recovery was successful.
+            TestUtils.readAllEvents(SCOPE, streamName, clientRunner.getClientFactory(), clientRunner.getReaderGroupManager(), "RG", "R");
+            log.info("Read all events again to verify that segments were recovered.");
+        }
+        Assert.assertNotNull(StorageListSegmentsCommand.descriptor());
+    }
+
+    /**
      * Tests DurableLog recovery command.
      * @throws Exception    In case of any exception thrown while execution.
      */
